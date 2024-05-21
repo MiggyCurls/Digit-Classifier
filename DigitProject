@@ -1,0 +1,328 @@
+'''
+NAME:
+  MIGUEL ANGEL GOMEZ
+Separate the 60,000 images into their designated groups of 6,000 digits from 0-9
+Use k-means algorithm (K=9)to further separate into 90 images where the cluster centers are
+Put the 90 images into an approximate training set with their respective labels
+use KNN with the new training set to test, N=1
+TRAINING SET (MNIST): color score in decimal (0-255)
+784 rows of 0-255 plus first column being class label
+sqrt(784) = 28 x 28
+'''
+from IPython import display
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cluster import KMeans
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sn
+import pandas as pd
+import time
+
+# Import the image dataset MNIST
+from tensorflow.keras.datasets import mnist
+import tensorflow.keras as keras
+
+# Load the data
+(trainX, trainY), (testX, testY) = mnist.load_data()
+
+#Print some attributes
+print("trainX ", trainX.shape)
+print("trainY ", trainY.shape)
+print("testX ", testX.shape)
+print("testY ", testY.shape)
+print("trainX ", trainX[0].size)
+print("trainX ", trainX[0].size)
+print("trainX ", trainX[0].dtype)
+
+
+
+fig, ax = plt.subplots(constrained_layout=True)
+
+digits = []
+train_quantity = np.zeros(10)
+digits = np.unique(trainY)
+print('Unique digits in Train Y ', digits)
+print('Zeros array to count unique digits ', train_quantity)
+
+for i in range(60000):
+  train_quantity[trainY[i]] += 1
+
+print('Corresponding amount of digits in Train Y ', train_quantity)
+# Bar chart to represent Training data set of digits
+ax.bar(x=digits, height=train_quantity, width=1, edgecolor='k', linewidth=2)
+ax.set_xticks(np.arange(len(digits)))
+ax.set_ylabel('number of images')
+ax.set_xlabel('digit 0-9')
+ax.set_title('training digit frequency')
+
+
+fig, ax = plt.subplots(constrained_layout=True)
+# Repeat similar process to count each digit in Test dataset
+digits = np.unique(testY)
+test_quantity = np.zeros(10)
+
+for i in range(10000):
+  test_quantity[testY[i]] += 1
+
+print('Corresponding amount of digits in Test Y ', test_quantity)
+# Bar chart to represent Testing data set of digits
+ax.bar(x=digits, height=test_quantity, width=1, edgecolor='k', linewidth=2)
+ax.set_xticks(np.arange(len(digits)))
+ax.set_ylabel('number of images')
+ax.set_xlabel('digit 0-9')
+ax.set_title('testing digit frequency')
+
+
+
+# Split training data into 10 groups, one der digit label
+
+# Initialize arrays for digits
+zeros = np.empty([int(train_quantity[0]), 28, 28])
+ones = np.empty([int(train_quantity[1]), 28, 28])
+twos = np.empty([int(train_quantity[2]), 28, 28])
+threes = np.empty([int(train_quantity[3]), 28, 28])
+fours = np.empty([int(train_quantity[4]), 28, 28])
+fives = np.empty([int(train_quantity[5]), 28, 28])
+sixes = np.empty([int(train_quantity[6]), 28, 28])
+sevens = np.empty([int(train_quantity[7]), 28, 28])
+eights = np.empty([int(train_quantity[8]), 28, 28])
+nines = np.empty([int(train_quantity[9]), 28, 28])
+
+ze_idx = 0
+on_idx = 0
+tw_idx = 0
+th_idx = 0
+fo_idx = 0
+fi_idx = 0
+si_idx = 0
+se_idx = 0
+ei_idx = 0
+ni_idx = 0
+
+for i in range(60000):
+  if trainY[i] == 0:
+    zeros[ze_idx] = trainX[i]
+    ze_idx += 1
+  elif trainY[i] == 1:
+    ones[on_idx] = trainX[i]
+    on_idx += 1
+  elif trainY[i] == 2:
+    twos[tw_idx] = trainX[i]
+    tw_idx += 1
+  elif trainY[i] == 3:
+    threes[th_idx] = trainX[i]
+    th_idx += 1
+  elif trainY[i] == 4:
+    fours[fo_idx] = trainX[i]
+    fo_idx += 1
+  elif trainY[i] == 5:
+    fives[fi_idx] = trainX[i]
+    fi_idx += 1
+  elif trainY[i] == 6:
+    sixes[si_idx] = trainX[i]
+    si_idx += 1
+  elif trainY[i] == 7:
+    sevens[se_idx] = trainX[i]
+    se_idx += 1
+  elif trainY[i] == 8:
+    eights[ei_idx] = trainX[i]
+    ei_idx += 1
+  elif trainY[i] == 9:
+    nines[ni_idx] = trainX[i]
+    ni_idx += 1
+
+print('size and shape of 0 group: ', zeros.size, ' ', zeros.shape)
+print('size and shape of 1 group: ', ones.size, ' ', ones.shape)
+print('size and shape of 2 group: ', twos.size, ' ', twos.shape)
+print('size and shape of 3 group: ', threes.size, ' ', threes.shape)
+print('size and shape of 4 group: ', fours.size, ' ', fours.shape)
+print('size and shape of 5 group: ', fives.size, ' ', fives.shape)
+print('size and shape of 6 group: ', sixes.size, ' ', sixes.shape)
+print('size and shape of 7 group: ', sevens.size, ' ', sevens.shape)
+print('size and shape of 8 group: ', eights.size, ' ', eights.shape)
+print('size and shape of 9 group: ', nines.size, ' ', nines.shape)
+
+# Use K-means on each of the 10 groups
+print('zeros shape ',zeros.shape)
+z_arr = np.reshape(zeros, (int(train_quantity[0]), 784))
+print('new zeros shape ', z_arr.shape)
+kmeans_zeros = KMeans(n_clusters=9, n_init=4)
+kmeans_zeros.fit(z_arr)
+
+print('ones shape ', ones.shape)
+ones_arr = np.reshape(ones, (int(train_quantity[1]), 784))
+print('new ones shape ', ones_arr.shape)
+kmeans_ones = KMeans(n_clusters=9, n_init=4)
+kmeans_ones.fit(ones_arr)
+
+print('twos shape ', twos.shape)
+twos_arr = np.reshape(twos, (int(train_quantity[2]), 784))
+print('new twos shape ', twos_arr.shape)
+kmeans_twos = KMeans(n_clusters=9, n_init=4)
+kmeans_twos.fit(twos_arr)
+
+print('threes shape ', threes.shape)
+threes_arr = np.reshape(threes, (int(train_quantity[3]), 784))
+print('new threes shape ', threes_arr.shape)
+kmeans_threes = KMeans(n_clusters=9, n_init=4)
+kmeans_threes.fit(threes_arr)
+
+print('fours shape ', fours.shape)
+fours_arr = np.reshape(fours, (int(train_quantity[4]), 784))
+print('new fours shape ', fours_arr.shape)
+kmeans_fours = KMeans(n_clusters=9, n_init=4)
+kmeans_fours.fit(fours_arr)
+
+print('fives shape ', fives.shape)
+fives_arr = np.reshape(fives, (int(train_quantity[5]), 784))
+print('new fives shape ', fives_arr.shape)
+kmeans_fives = KMeans(n_clusters=9, n_init=4)
+kmeans_fives.fit(fives_arr)
+
+print('sixes shape ', sixes.shape)
+sixes_arr = np.reshape(sixes, (int(train_quantity[6]), 784))
+print('new sixes shape ', sixes_arr.shape)
+kmeans_sixes = KMeans(n_clusters=9, n_init=4)
+kmeans_sixes.fit(sixes_arr)
+
+print('sevens shape ', sevens.shape)
+sevens_arr = np.reshape(sevens, (int(train_quantity[7]), 784))
+print('new sevens shape ', sevens_arr.shape)
+kmeans_sevens = KMeans(n_clusters=9, n_init=4)
+kmeans_sevens.fit(sevens_arr)
+
+print('eights shape ', eights.shape)
+eights_arr = np.reshape(eights, (int(train_quantity[8]), 784))
+print('new eights shape ', eights_arr.shape)
+kmeans_eights = KMeans(n_clusters=9, n_init=4)
+kmeans_eights.fit(eights_arr)
+
+print('nines shape ', nines.shape)
+nines_arr = np.reshape(nines, (int(train_quantity[9]), 784))
+print('new nines shape ', nines_arr.shape)
+kmeans_nines = KMeans(n_clusters=9, n_init=4)
+kmeans_nines.fit(nines_arr)
+
+
+# Cluster the data
+z_labels = kmeans_zeros.predict(z_arr)
+z_centers = kmeans_zeros.cluster_centers_
+
+on_labels = kmeans_ones.predict(ones_arr)
+on_centers = kmeans_ones.cluster_centers_
+
+tw_labels = kmeans_twos.predict(twos_arr)
+tw_centers = kmeans_twos.cluster_centers_
+
+th_labels = kmeans_threes.predict(threes_arr)
+th_centers = kmeans_threes.cluster_centers_
+
+fo_labels = kmeans_fours.predict(fours_arr)
+fo_centers = kmeans_fours.cluster_centers_
+
+fi_labels = kmeans_fives.predict(fives_arr)
+fi_centers = kmeans_fives.cluster_centers_
+
+si_labels = kmeans_sixes.predict(sixes_arr)
+si_centers = kmeans_sixes.cluster_centers_
+
+se_labels = kmeans_sevens.predict(sevens_arr)
+se_centers = kmeans_sevens.cluster_centers_
+
+ei_labels = kmeans_eights.predict(eights_arr)
+ei_centers = kmeans_eights.cluster_centers_
+
+ni_labels = kmeans_nines.predict(nines_arr)
+ni_centers = kmeans_nines.cluster_centers_
+
+# Display the digit clusters 'centers' with 9 figures
+
+# Centers array is used to store each 2d array of clusters in a 3d way
+centers = np.empty([10, 9, 784])
+centers[0] = z_centers
+centers[1] = on_centers
+centers[2] = tw_centers
+centers[3] = th_centers
+centers[4] = fo_centers
+centers[5] = fi_centers
+centers[6] = si_centers
+centers[7] = se_centers
+centers[8] = ei_centers
+centers[9] = ni_centers
+# Go through each 2d array in centers that correspond to a digit with 9 clusters
+for digit in range(10):
+  fig, ax = plt.subplots(3, 3, figsize=(8, 8))
+  x = 0
+  y = 0
+  # x and y are used to display the plts in a 3x3 fashion
+  for cluster in range(9):
+    if y == 3:
+      y = 0
+      x += 1
+    # Each 2d image in cluster will be reshape from 784 to 28x28 to be displayed
+    I = centers[digit, cluster, :].reshape(28, 28)
+    ax[x, y].imshow(I, cmap='gray')
+    ax[x, y].set_title('digit ' + str(digit) + ' cluster ' + str(cluster), fontsize=16)
+    ax[x, y].axis('off')
+    y += 1
+  plt.show()
+  # plt.close stops fig from producing an extra 3x3 figure after the for loop ends
+  plt.close(fig)
+  print(50 * '---')
+  print(50 * '---')
+  print(50 * '---')
+
+# Classify the testing data using a 1-Nearest (KNN) model from the gathered centers ([10, 9, 784])
+
+# model.fit(x(number of images, image information), y(digit with image))
+# new_y_train array has the corresponding Y values for new_train_X 'centers'
+new_y_train = np.zeros(90)
+mult = 0
+for i in range(90):
+  if i % 9 == 0 and i != 0:
+    mult += 1
+  new_y_train[i] = mult
+
+
+centers = np.reshape(centers, (90, 784))
+
+model = KNeighborsClassifier(n_neighbors=1)
+
+# Time to see how long KNN (n=1) fits the new approximate data
+start_time = time.time()
+model.fit(centers, new_y_train)
+end_time = time.time()
+pred_time = end_time-start_time
+print('training time cost (seconds): ', pred_time)
+
+# Evaluate the model on test sets
+testX = np.reshape(testX, (10000, 784))
+start_time = time.time()
+y_test_pred = model.predict(testX)
+end_time = time.time()
+pred_time = end_time-start_time
+print('test time cost (seconds): ', pred_time)
+
+# The first image in the test set
+plt.imshow(testX[0].reshape(28, 28), cmap='gray')
+plt.title("label %d" % y_test_pred[0])
+
+# measure the accuracy
+# accuracy = sum of all correctly classified digits (they == each other)
+# divided by size of digits calculated
+# times 100
+
+acc_test = np.sum(y_test_pred == testY)/testY.shape[0]
+acc_test *= 100
+print('Test accuracy: ', acc_test)
+
+# Produce confusion matrix with heat map to show results of model
+fig, ax = plt.subplots(figsize=(8, 8), constrained_layout=True)
+matrix = confusion_matrix(testY, y_test_pred)
+df = pd.DataFrame(matrix)
+sn.heatmap(df, annot=True, fmt=".4g", ax=ax)
+title = 'test_accuracy {:.2f}% prediction time {:.2f} seconds'.format(acc_test, pred_time)
+ax.set_title(title)
+ax.set_xlabel('true')
+ax.set_ylabel('predicted')
